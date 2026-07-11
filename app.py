@@ -1,5 +1,6 @@
 from flask import Flask, render_template, request
 from flask_sqlalchemy import SQLAlchemy
+from werkzeug.security import generate_password_hash, check_password_hash
 from dotenv import load_dotenv
 from urllib.parse import quote_plus
 import os
@@ -24,7 +25,7 @@ class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(120), nullable=False)
     email = db.Column(db.String(150), unique=True, nullable=False)
-    password = db.Column(db.String(200), nullable=False)
+    password_hash = db.Column(db.String(255), nullable=False)
 
 
 @app.route("/")
@@ -37,18 +38,18 @@ def register():
     if request.method == "POST":
         name = request.form.get("name")
         email = request.form.get("email")
-        password = request.form.get("password")
+        raw_password = request.form.get("password")
 
-        # Check if this email is already registered before trying to save
         existing_user = User.query.filter_by(email=email).first()
         if existing_user:
-            return f"<h2>That email is already registered. Try logging in instead.</h2>"
+            return "<h2>That email is already registered. Try logging in instead.</h2>"
 
-        new_user = User(name=name, email=email, password=password)
+        hashed = generate_password_hash(raw_password)
+        new_user = User(name=name, email=email, password_hash=hashed)
         db.session.add(new_user)
         db.session.commit()
 
-        return f"<h2>Thanks, {name}! Your account was saved to the database.</h2>"
+        return f"<h2>Thanks, {name}! Your account was saved securely.</h2>"
     return render_template("register.html")
 
 
