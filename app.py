@@ -54,6 +54,12 @@ class Lesson(db.Model):
     body = db.Column(db.Text, nullable=True)                 # content for articles
     video_url = db.Column(db.String(500), nullable=True)     # embed link for videos
 
+class Mentor(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(120), nullable=False)
+    expertise = db.Column(db.String(200), nullable=False)
+    bio = db.Column(db.Text, nullable=True)
+
 
 # ---- Routes ----
 
@@ -196,7 +202,32 @@ def new_course():
 
     return render_template("new_course.html")
 
+@app.route("/mentors")
+def list_mentors():
+    if "user_id" not in session:
+        return redirect(url_for("login"))
 
+    all_mentors = Mentor.query.all()
+    return render_template("mentors.html", mentors=all_mentors)
+
+
+@app.route("/mentors/new", methods=["GET", "POST"])
+def new_mentor():
+    if "user_id" not in session:
+        return redirect(url_for("login"))
+
+    if request.method == "POST":
+        name = request.form.get("name")
+        expertise = request.form.get("expertise")
+        bio = request.form.get("bio")
+
+        mentor = Mentor(name=name, expertise=expertise, bio=bio)
+        db.session.add(mentor)
+        db.session.commit()
+
+        return redirect(url_for("list_mentors"))
+
+    return render_template("new_mentor.html")
 @app.route("/logout")
 def logout():
     session.pop("user_id", None)
